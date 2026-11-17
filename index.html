@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>きょうの自己肯定感</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="自己肯定感">
+<meta name="theme-color" content="#f6f3ec">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --font:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+    --bg:#f6f3ec;
+    --ink:#3a3631;
+    --sub:#9a9286;
+    --line:#e2dbcd;
+    --field:#faf8f3;
+    --danger:#c4512f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink)}
+  body{font-family:var(--font);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:620px;margin:0 auto;padding:calc(28px + env(safe-area-inset-top)) 20px calc(60px + env(safe-area-inset-bottom))}
+  button{font:inherit;cursor:pointer;color:var(--ink);background:transparent;border:1px solid var(--ink);padding:6px 18px;border-radius:2px}
+  button.primary{background:var(--ink);color:var(--bg)}
+  button.link{border:none;padding:0;color:var(--sub);font-size:12px}
+
+  #entry{touch-action:pan-y;transition:transform .18s ease,opacity .18s ease}
+  #entry.out-l{transform:translateX(-24px);opacity:0}
+  #entry.out-r{transform:translateX(24px);opacity:0}
+  #entry.pre{transition:none}
+
+  .day{display:flex;align-items:center;justify-content:center;gap:8px}
+  .day button{border:none;padding:0 6px;color:var(--sub);font-size:18px;line-height:1}
+  .day button:disabled{opacity:.25;cursor:default}
+  input[type=date]{font:inherit;font-size:15px;color:var(--ink);background:transparent;border:none;padding:0;text-align:center}
+  input[type=date]::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer}
+
+  .big{font-size:88px;line-height:1;font-weight:500;text-align:center;margin:14px 0 18px;font-variant-numeric:tabular-nums}
+
+  .chart{position:relative;height:200px;margin-left:22px;border-bottom:1px solid var(--line)}
+  .grid{position:absolute;left:0;right:0;border-top:1px dashed var(--line)}
+  .grid span{position:absolute;left:-22px;top:-8px;font-size:10px;color:var(--sub);width:18px;text-align:right}
+  .bars{position:absolute;inset:0;display:flex;align-items:flex-end;gap:2px}
+  .slot{flex:1;height:100%;position:relative;cursor:pointer;min-width:0}
+  .slot.sel{background:rgba(58,54,49,.05)}
+  .bar{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:24px;border-radius:1px 1px 0 0;transition:height .25s ease}
+  .bar.now{background:transparent;border:1.5px dashed var(--ink);border-bottom:none;z-index:200;transition:height .06s linear}
+  .xl{display:flex;justify-content:space-between;margin-left:22px;font-size:10px;color:var(--sub);margin-top:2px}
+  .xl span.c{color:var(--ink)}
+
+  .tabs{display:flex;gap:16px;justify-content:center;margin:12px 0 10px;font-size:12px}
+  .tabs button{border:none;padding:0 0 2px;color:var(--sub);border-bottom:1px solid transparent;border-radius:0}
+  .tabs button.on{color:var(--ink);border-bottom-color:var(--ink)}
+
+  input[type=range]{width:100%;-webkit-appearance:none;appearance:none;background:transparent;height:32px}
+  input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--ink)}
+  input[type=range]::-moz-range-track{height:2px;background:var(--ink)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--bg);border:2px solid var(--ink);margin-top:-10px;cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--bg);border:2px solid var(--ink);cursor:pointer}
+
+  .row{display:flex;gap:10px;margin-top:10px}
+  input[type=text]{flex:1;min-width:0;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);padding:8px 12px;border-radius:2px}
+  input[type=text]::placeholder{color:var(--sub)}
+  input:focus{outline:none;border-color:var(--ink)}
+
+  ul.log{list-style:none;margin:14px 0 0;padding:0}
+  ul.log li{display:grid;grid-template-columns:10px 44px 34px 1fr auto;gap:10px;align-items:baseline;padding:9px 6px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s}
+  ul.log li:first-child{border-top:1px solid var(--line)}
+  ul.log li.on{background:rgba(58,54,49,.06)}
+  ul.log li.new{animation:in .5s ease}
+  @keyframes in{from{background:rgba(58,54,49,.12)}to{background:transparent}}
+  ul.log .dot{width:8px;height:8px;border-radius:50%;align-self:center}
+  ul.log .t{color:var(--sub);font-size:12px;font-variant-numeric:tabular-nums}
+  ul.log .s{font-weight:500;font-size:17px;text-align:right;font-variant-numeric:tabular-nums}
+  ul.log .r{font-size:14px;word-break:break-word}
+  ul.log .del{display:none;border:1px solid var(--danger);color:var(--danger);padding:0 10px;font-size:12px;align-self:center}
+  ul.log li.on .del{display:inline-block}
+
+  footer{display:flex;gap:16px;justify-content:flex-end;margin-top:40px}
+  #io{width:100%;min-height:80px;font-family:ui-monospace,monospace;font-size:11px;color:var(--ink);background:var(--field);border:1px solid var(--line);padding:8px;display:none;margin-top:8px}
+  #ioRow{display:none;gap:12px;align-items:center;margin-top:6px;font-size:12px;color:var(--sub)}
+
+  @media (max-width:480px){ .big{font-size:72px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section id="entry">
+    <div class="day"><button id="prev" aria-label="前の日">‹</button><input type="date" id="date" aria-label="日付"><button id="next" aria-label="次の日">›</button></div>
+    <div class="big" id="scoreView">50</div>
+    <div class="chart">
+      <div class="grid" style="top:0"><span>100</span></div>
+      <div class="grid" style="top:50%"><span>50</span></div>
+      <div class="bars" id="bars"></div>
+    </div>
+    <div class="xl" id="xl"></div>
+    <div class="tabs" id="tabs">
+      <button data-r="7" class="on">7日</button>
+      <button data-r="30">30日</button>
+      <button data-r="0">ぜんぶ</button>
+    </div>
+    <input type="range" id="score" min="1" max="100" value="50" aria-label="1〜100">
+    <div class="row">
+      <input type="text" id="reason" placeholder="一言（任意）" maxlength="200">
+      <button class="primary" id="save">記録</button>
+    </div>
+    <ul class="log" id="log"></ul>
+  </section>
+
+  <footer>
+    <button class="link" id="exportBtn">書き出す</button>
+    <button class="link" id="importBtn">読み込む</button>
+  </footer>
+  <textarea id="io" spellcheck="false"></textarea>
+  <div id="ioRow"><button class="link" id="ioAction" style="color:var(--ink)"></button><button class="link" id="ioClose">閉じる</button><span id="ioMsg"></span></div>
+</div>
+
+<script>
+(function(){
+  var KEY='jikokouteikan.v2', OLD='jikokouteikan.v1';
+  var mem={}, range=7, lastAdded=null, picked=null;
+  var data=load(); // { 'YYYY-MM-DD': [ {ts:Number, s:Number, r:String}, ... ] }
+
+  var $=function(id){return document.getElementById(id);};
+  var scoreEl=$('score'), scoreView=$('scoreView'), reasonEl=$('reason'), dateEl=$('date');
+
+  function pad(n){return (n<10?'0':'')+n;}
+  function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+  function parse(s){var p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
+  function hm(ts){var d=new Date(ts);return d.getHours()+':'+pad(d.getMinutes());}
+  // その日の何回目かで色を変える（9回目以降は最初の色に戻る）
+  var COLORS=['#e0a83e','#6f9e8b','#55648a','#cf7f6a','#8a76a8','#5f9fbf','#b3a04a','#a56b8f'];
+  function col(i){return COLORS[i%COLORS.length];}
+  function esc(t){return t.replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+  function load(){
+    try{
+      var r=localStorage.getItem(KEY); if(r) return JSON.parse(r);
+      var o=localStorage.getItem(OLD); if(!o) return {};
+      // 旧形式（1日1件）から移す
+      var old=JSON.parse(o), out={};
+      Object.keys(old).forEach(function(k){ var d=parse(k); d.setHours(21,0,0,0); out[k]=[{ts:+d,s:old[k].s,r:old[k].r||''}]; });
+      return out;
+    }catch(e){return mem;}
+  }
+  function store(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){mem=data;}}
+
+  var today=ymd(new Date());
+  dateEl.value=today; dateEl.max=today;
+  function sel(){return dateEl.value||today;}
+  function list(k){return (data[k]||[]).slice().sort(function(a,b){return a.ts-b.ts;});}
+
+  // ---- 入力 ----
+  scoreEl.addEventListener('input',function(){
+    scoreView.textContent=scoreEl.value;
+    var b=document.querySelector('.bar.now'); if(b) b.style.height=scoreEl.value+'%';
+  });
+  reasonEl.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.isComposing){$('save').click();}});
+
+  $('save').addEventListener('click',function(){
+    var k=sel(), now=new Date();
+    var rec={ts:+now, s:+scoreEl.value, r:reasonEl.value.trim()};
+    // 過去の日に記録するときは、その日の今の時刻として残す
+    if(k!==today){var d=parse(k); d.setHours(now.getHours(),now.getMinutes(),now.getSeconds()); rec.ts=+d;}
+    (data[k]=data[k]||[]).push(rec);
+    store(); reasonEl.value=''; lastAdded=rec.ts; picked=null;
+    render();
+  });
+
+  // ---- 日付の切り替え ----
+  function setDay(k){dateEl.value=k; picked=null; $('next').disabled=(k>=today); render();}
+  dateEl.addEventListener('change',function(){setDay(!dateEl.value||dateEl.value>today?today:dateEl.value);});
+
+  function shift(n){
+    var d=parse(sel()); d.setDate(d.getDate()+n); var k=ymd(d);
+    if(k>today) return;
+    var ent=$('entry');
+    ent.classList.add(n<0?'out-r':'out-l');
+    setTimeout(function(){
+      setDay(k);
+      ent.classList.add('pre'); ent.classList.remove('out-r','out-l'); ent.classList.add(n<0?'out-l':'out-r');
+      void ent.offsetWidth;
+      ent.classList.remove('pre','out-l','out-r');
+    },160);
+  }
+  $('prev').addEventListener('click',function(){shift(-1);});
+  $('next').addEventListener('click',function(){shift(1);});
+  var sx=null, sy=0;
+  $('entry').addEventListener('touchstart',function(e){
+    if(e.target.type==='range'||e.target.type==='text'){sx=null;return;}
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY;
+  },{passive:true});
+  $('entry').addEventListener('touchend',function(e){
+    if(sx===null)return;
+    var dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy; sx=null;
+    if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5) shift(dx>0?-1:1);
+  });
+  document.addEventListener('keydown',function(e){
+    if(/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;
+    if(e.key==='ArrowLeft')shift(-1); if(e.key==='ArrowRight')shift(1);
+  });
+
+  // ---- グラフ ----
+  $('tabs').addEventListener('click',function(ev){
+    var b=ev.target.closest('button');if(!b)return;
+    range=+b.dataset.r;
+    [].forEach.call(this.children,function(x){x.classList.toggle('on',x===b);});
+    drawChart();
+  });
+
+  function drawChart(){
+    var ks=Object.keys(data).filter(function(k){return data[k].length;}).sort();
+    var s=sel(), c=parse(s), half;
+    if(range){half=Math.floor(range/2);}
+    else{var first=ks.length?ks[0]:s; if(s<first)first=s; half=Math.max(3,Math.round((c-parse(first))/864e5));}
+    var start=new Date(c); start.setDate(c.getDate()-half);
+    var days=[], d=new Date(start);
+    for(var i=0;i<=half*2;i++){days.push(ymd(d)); d.setDate(d.getDate()+1);}
+
+    $('bars').style.gap=days.length>40?'0':'2px';
+    $('bars').innerHTML=days.map(function(k){
+      // 低い記録ほど前に出す
+      var h=list(k).map(function(e,i){return {s:e.s,c:col(i)};})
+        .sort(function(a,b){return b.s-a.s;})
+        .map(function(e){return '<div class="bar" style="height:'+e.s+'%;background:'+e.c+';z-index:'+(101-e.s)+'"></div>';}).join('');
+      if(k===s) h+='<div class="bar now" style="height:'+scoreEl.value+'%"></div>';
+      return '<div class="slot'+(k===s?' sel':'')+'" data-k="'+k+'">'+h+'</div>';
+    }).join('');
+
+    var n=range===7?7:5, lab='';
+    for(var j=0;j<n;j++){
+      var idx=Math.round((days.length-1)*j/(n-1)), dd=parse(days[idx]);
+      lab+='<span'+(days[idx]===s?' class="c"':'')+'>'+(dd.getMonth()+1)+'/'+dd.getDate()+'</span>';
+    }
+    $('xl').innerHTML=lab;
+  }
+  $('bars').addEventListener('click',function(ev){
+    var slot=ev.target.closest('.slot'); if(!slot)return;
+    var k=slot.dataset.k; if(k>today||k===sel())return;
+    setDay(k);
+  });
+
+  // ---- その日のログ ----
+  function renderLog(){
+    var L=list(sel()).map(function(e,i){e.c=col(i);return e;}).reverse();
+    $('log').innerHTML=L.map(function(e){
+      return '<li data-ts="'+e.ts+'" class="'+(e.ts===picked?'on':'')+(e.ts===lastAdded?' new':'')+'">'+
+        '<span class="dot" style="background:'+e.c+'"></span>'+
+        '<span class="t">'+hm(e.ts)+'</span>'+
+        '<span class="s">'+e.s+'</span>'+
+        '<span class="r">'+esc(e.r||'')+'</span>'+
+        '<button class="del" data-del="'+e.ts+'">消す</button></li>';
+    }).join('');
+    lastAdded=null;
+  }
+  $('log').addEventListener('click',function(ev){
+    var del=ev.target.dataset&&ev.target.dataset.del;
+    if(del){
+      var k=sel(), ts=+del;
+      data[k]=(data[k]||[]).filter(function(e){return e.ts!==ts;});
+      if(!data[k].length) delete data[k];
+      store(); picked=null; render(); return;
+    }
+    var li=ev.target.closest('li'); if(!li)return;
+    var ts=+li.dataset.ts;
+    picked=(picked===ts)?null:ts;
+    [].forEach.call($('log').children,function(x){x.classList.toggle('on',+x.dataset.ts===picked);});
+  });
+
+  // ---- 書き出し / 読み込み ----
+  var io=$('io'), ioRow=$('ioRow'), ioAction=$('ioAction'), mode='';
+  function openIO(m){mode=m;io.style.display='block';ioRow.style.display='flex';$('ioMsg').textContent='';}
+  $('exportBtn').addEventListener('click',function(){
+    openIO('export'); io.value=JSON.stringify(data); ioAction.textContent='コピー';
+    try{
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));
+      a.download='jikokouteikan_'+today+'.json';
+      document.body.appendChild(a);a.click();a.remove();
+    }catch(e){}
+  });
+  $('importBtn').addEventListener('click',function(){
+    openIO('import'); io.value=''; io.placeholder='書き出した文字を貼り付け'; ioAction.textContent='読み込む';
+  });
+  ioAction.addEventListener('click',function(){
+    if(mode==='export'){
+      io.select();
+      var ok=function(){$('ioMsg').textContent='コピーしました';};
+      if(navigator.clipboard)navigator.clipboard.writeText(io.value).then(ok,function(){document.execCommand('copy');ok();});
+      else{document.execCommand('copy');ok();}
+      return;
+    }
+    try{
+      var o=JSON.parse(io.value), n=0;
+      Object.keys(o).forEach(function(k){
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(k))return;
+        var arr=Array.isArray(o[k])?o[k]:[{ts:+parse(k)+21*36e5,s:o[k].s,r:o[k].r}];
+        arr.forEach(function(e){
+          if(!e||!(+e.s>=1&&+e.s<=100))return;
+          var cur=data[k]=data[k]||[], ts=+e.ts||(+parse(k)+21*36e5);
+          if(cur.some(function(x){return x.ts===ts;}))return;
+          cur.push({ts:ts,s:Math.round(+e.s),r:String(e.r||'')}); n++;
+        });
+      });
+      store(); render(); $('ioMsg').textContent=n+'件を読み込みました';
+    }catch(e){$('ioMsg').textContent='読み込めませんでした';}
+  });
+  $('ioClose').addEventListener('click',function(){io.style.display='none';ioRow.style.display='none';});
+
+  function render(){scoreView.textContent=scoreEl.value; drawChart(); renderLog();}
+  $('next').disabled=true;
+  render();
+})();
+</script>
+</body>
+</html>
