@@ -51,6 +51,13 @@
   .slot.sel{background:rgba(58,54,49,.05)}
   .bar{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:24px;border-radius:1px 1px 0 0;transition:height .25s ease}
   .bar.now{background:transparent;border:1.5px dashed var(--ink);border-bottom:none;z-index:200;transition:height .06s linear}
+  .trend{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:300}
+  .dots{position:absolute;inset:0;pointer-events:none;z-index:301}
+  .pt{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--ink);transform:translate(-50%,50%)}
+  .pt.lg{width:11px;height:11px;border:2px solid var(--bg)}
+  .pt.now{background:transparent;border:1.5px dashed var(--ink);width:12px;height:12px}
+  .bars.dim .bar:not(.now){opacity:.55}
+  .bars.day{cursor:default}
   .xl{display:flex;justify-content:space-between;margin-left:22px;font-size:10px;color:var(--sub);margin-top:2px}
   .xl span.c{color:var(--ink)}
 
@@ -98,9 +105,12 @@
       <div class="grid" style="top:0"><span>100</span></div>
       <div class="grid" style="top:50%"><span>50</span></div>
       <div class="bars" id="bars"></div>
+      <svg class="trend" id="trend" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+      <div class="dots" id="dots"></div>
     </div>
     <div class="xl" id="xl"></div>
     <div class="tabs" id="tabs">
+      <button data-r="1">1日</button>
       <button data-r="7" class="on">7日</button>
       <button data-r="30">30日</button>
       <button data-r="0">ぜんぶ</button>
@@ -124,7 +134,7 @@
 <script>
 (function(){
   var KEY='jikokouteikan.v2', OLD='jikokouteikan.v1';
-  var mem={}, range=7, lastAdded=null, picked=null;
+  var mem={}, range=7, lastAdded=null, picked=null; // range=1 はその日の時間別
   var data=load(); // { 'YYYY-MM-DD': [ {ts:Number, s:Number, r:String}, ... ] }
 
   var $=function(id){return document.getElementById(id);};
@@ -160,6 +170,7 @@
   scoreEl.addEventListener('input',function(){
     scoreView.textContent=scoreEl.value;
     var b=document.querySelector('.bar.now'); if(b) b.style.height=scoreEl.value+'%';
+    var n=document.querySelector('.pt.now'); if(n) n.style.bottom=scoreEl.value+'%';
   });
   reasonEl.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.isComposing){$('save').click();}});
 
@@ -209,12 +220,30 @@
   // ---- グラフ ----
   $('tabs').addEventListener('click',function(ev){
     var b=ev.target.closest('button');if(!b)return;
-    range=+b.dataset.r;
-    [].forEach.call(this.children,function(x){x.classList.toggle('on',x===b);});
-    drawChart();
+    setTab(+b.dataset.r); drawChart();
   });
 
+  function line(pts){
+    $('trend').innerHTML=pts.length>1?'<polyline points="'+pts.map(function(p){return p[0].toFixed(2)+','+(100-p[1]).toFixed(2);}).join(' ')+
+      '" fill="none" stroke="#3a3631" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>':'';
+  }
+
+  // その日の時間別（0:00〜24:00）
+  function drawDay(){
+    var s=sel(), L=list(s), base=+parse(s);
+    $('bars').className='bars day'; $('bars').innerHTML='';
+    var pts=L.map(function(e,i){return [Math.min(100,(e.ts-base)/864e5*100), e.s, col(i)];});
+    line(pts);
+    var now=new Date(), nx=(now.getHours()*60+now.getMinutes())/1440*100;
+    $('dots').innerHTML=pts.map(function(p){
+      return '<span class="pt lg" style="left:'+p[0]+'%;bottom:'+p[1]+'%;background:'+p[2]+'"></span>';
+    }).join('')+'<span class="pt now" style="left:'+nx+'%;bottom:'+scoreEl.value+'%"></span>';
+    $('xl').innerHTML=['0:00','6:00','12:00','18:00','24:00'].map(function(t){return '<span>'+t+'</span>';}).join('');
+  }
+
   function drawChart(){
+    if(range===1) return drawDay();
+    $('bars').className='bars dim';
     var ks=Object.keys(data).filter(function(k){return data[k].length;}).sort();
     var s=sel(), c=parse(s), half;
     if(range){half=Math.floor(range/2);}
@@ -239,11 +268,24 @@
       lab+='<span'+(days[idx]===s?' class="c"':'')+'>'+(dd.getMonth()+1)+'/'+dd.getDate()+'</span>';
     }
     $('xl').innerHTML=lab;
+
+    // 日ごとの平均を線でつなぐ
+    var pts=[], dl=days.length;
+    days.forEach(function(k,i){
+      var L=list(k); if(!L.length) return;
+      pts.push([(i+.5)/dl*100, L.reduce(function(a,b){return a+b.s;},0)/L.length]);
+    });
+    line(pts);
+    $('dots').innerHTML=pts.map(function(p){return '<span class="pt" style="left:'+p[0]+'%;bottom:'+p[1]+'%"></span>';}).join('');
+  }
+  function setTab(r){
+    range=r;
+    [].forEach.call($('tabs').children,function(x){x.classList.toggle('on',+x.dataset.r===r);});
   }
   $('bars').addEventListener('click',function(ev){
     var slot=ev.target.closest('.slot'); if(!slot)return;
-    var k=slot.dataset.k; if(k>today||k===sel())return;
-    setDay(k);
+    var k=slot.dataset.k; if(k>today)return;
+    setTab(1); setDay(k);
   });
 
   // ---- その日のログ ----
